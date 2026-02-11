@@ -1,0 +1,728 @@
+!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ARQUIVO DE RELATÓRIOS - INSTITUTO EDVERNIA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Courier Prime', monospace;
+            background-color: #0a0a0a;
+            color: #00ff41;
+            overflow-x: hidden;
+        }
+        
+        .scanline {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0, 255, 65, 0.03) 50%);
+            background-size: 100% 4px;
+            pointer-events: none;
+            z-index: 50;
+            animation: scanline 8s linear infinite;
+        }
+        
+        .crt-flicker {
+            animation: flicker 0.15s infinite;
+        }
+        
+        .glitch {
+            position: relative;
+            animation: glitch 3s infinite;
+        }
+        
+        .input-field {
+            background: rgba(0, 20, 0, 0.8);
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            font-family: 'Share Tech Mono', monospace;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+        }
+        
+        .input-field:focus {
+            outline: none;
+            box-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+            background: rgba(0, 40, 0, 0.9);
+        }
+        
+        .btn-terminal {
+            background: transparent;
+            border: 1px solid #00ff41;
+            color: #00ff41;
+            font-family: 'Share Tech Mono', monospace;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+        
+        .btn-terminal:hover {
+            background: #00ff41;
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 255, 65, 0.6);
+        }
+        
+        .btn-terminal:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-danger {
+            border-color: #cc0000;
+            color: #cc0000;
+        }
+        
+        .btn-danger:hover {
+            background: #cc0000;
+            color: #000;
+            box-shadow: 0 0 15px rgba(204, 0, 0, 0.6);
+        }
+        
+        .confidential-stamp {
+            border: 3px solid #cc0000;
+            color: #cc0000;
+            transform: rotate(-5deg);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            animation: pulse 2s infinite;
+        }
+        
+        .classified-bar {
+            background: repeating-linear-gradient(
+                45deg,
+                #cc0000,
+                #cc0000 10px,
+                #990000 10px,
+                #990000 20px
+            );
+        }
+        
+        .audio-row {
+            border-bottom: 1px solid #003300;
+            transition: all 0.3s;
+        }
+        
+        .audio-row:hover {
+            background: rgba(0, 255, 65, 0.05);
+        }
+        
+        .audio-row.playing {
+            background: rgba(0, 255, 65, 0.1);
+            border-left: 3px solid #00ff41;
+        }
+        
+        .progress-bar {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 4px;
+            background: #001100;
+            border: 1px solid #003300;
+            cursor: pointer;
+        }
+        
+        .progress-bar::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 12px;
+            height: 12px;
+            background: #00ff41;
+            cursor: pointer;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+        }
+        
+        .progress-bar::-moz-range-thumb {
+            width: 12px;
+            height: 12px;
+            background: #00ff41;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 0 10px rgba(0, 255, 65, 0.8);
+        }
+        
+        .visualizer {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            height: 20px;
+        }
+        
+        .visualizer-bar {
+            width: 3px;
+            background: #00ff41;
+            transition: height 0.1s;
+        }
+        
+        .playing .visualizer-bar {
+            animation: equalize 0.5s infinite alternate;
+        }
+        
+        .visualizer-bar:nth-child(1) { height: 20%; animation-delay: 0.0s; }
+        .visualizer-bar:nth-child(2) { height: 60%; animation-delay: 0.1s; }
+        .visualizer-bar:nth-child(3) { height: 40%; animation-delay: 0.2s; }
+        .visualizer-bar:nth-child(4) { height: 80%; animation-delay: 0.3s; }
+        .visualizer-bar:nth-child(5) { height: 30%; animation-delay: 0.4s; }
+        
+        @keyframes equalize {
+            0% { height: 20%; }
+            100% { height: 100%; }
+        }
+        
+        @keyframes scanline {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(10px); }
+        }
+        
+        @keyframes flicker {
+            0% { opacity: 0.97; }
+            50% { opacity: 1; }
+            100% { opacity: 0.98; }
+        }
+        
+        @keyframes glitch {
+            0%, 100% { transform: translate(0); }
+            20% { transform: translate(-2px, 2px); }
+            40% { transform: translate(-2px, -2px); }
+            60% { transform: translate(2px, 2px); }
+            80% { transform: translate(2px, -2px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .typing-effect::after {
+            content: '|';
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0; }
+        }
+        
+        .noise {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.03;
+            z-index: 40;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+        }
+        
+        .status-badge {
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border: 1px solid;
+            font-family: 'Share Tech Mono', monospace;
+        }
+        
+        .status-ultra { border-color: #cc0000; color: #cc0000; }
+        .status-restricted { border-color: #ff6600; color: #ff6600; }
+        .status-internal { border-color: #00ff41; color: #00ff41; }
+        
+        /* Scrollbar personalizada */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0a0a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #003300;
+            border: 1px solid #00ff41;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #00ff41;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col crt-flicker">
+    <div class="scanline"></div>
+    <div class="noise"></div>
+    
+    <!-- Barra Classificada Superior -->
+    <div class="classified-bar h-4 w-full"></div>
+    
+    <!-- Cabeçalho -->
+    <header class="border-b border-green-800 p-4 bg-black/80 backdrop-blur-sm relative z-10">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <i data-lucide="shield-alert" class="w-8 h-8 text-red-600"></i>
+                <div>
+                    <h1 class="text-sm md:text-lg font-bold tracking-widest text-green-500">INSTITUTO DE PESQUISA EDVERNIA</h1>
+                    <p class="text-xs text-green-700">DIVISÃO DE SEGURANÇA - NÍVEL 5 | ARQUIVO DE RELATÓRIOS</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="hidden md:block text-right mr-4">
+                    <p class="text-xs text-green-400">AGENTE: EDVERNIA BASTOS</p>
+                    <p class="text-[10px] text-green-700">ID: EDV-7749-X</p>
+                </div>
+                <div class="confidential-stamp px-3 py-1 text-xs md:text-sm border-2">
+                    ULTRA-SECRETO
+                </div>
+                <button onclick="logout()" class="btn-terminal btn-danger px-4 py-2 text-xs flex items-center gap-2">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                    <span class="hidden md:inline">SAIR</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Conteúdo Principal -->
+    <main class="flex-1 p-4 md:p-8 relative z-10">
+        <div class="max-w-7xl mx-auto">
+            
+            <!-- Cabeçalho da Seção -->
+            <div class="mb-8 border-b border-green-900 pb-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+                    <div>
+                        <h2 class="text-2xl md:text-3xl font-bold tracking-widest mb-2 glitch">
+                            <i data-lucide="archive" class="w-6 h-6 inline mr-2"></i>
+                            ARQUIVO DE RELATÓRIOS AUDIO
+                        </h2>
+                        <p class="text-sm text-green-700 typing-effect" id="system-status">
+                            Sistema de arquivo ativo. Aguardando instruções...
+                        </p>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="text-right">
+                            <p class="text-xs text-green-800">TOTAL DE REGISTROS</p>
+                            <p class="text-xl font-bold text-green-500" id="total-records">00</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros e Busca -->
+            <div class="mb-6 flex flex-col md:flex-row gap-4 items-center justify-between bg-black/50 p-4 border border-green-900">
+                <div class="flex gap-2 w-full md:w-auto">
+                    <input 
+                        type="text" 
+                        id="search-input" 
+                        class="input-field px-4 py-2 text-sm w-full md:w-64" 
+                        placeholder="BUSCAR RELATÓRIO..."
+                        onkeyup="filterReports()"
+                    >
+                    <button onclick="filterReports()" class="btn-terminal px-4 py-2">
+                        <i data-lucide="search" class="w-4 h-4"></i>
+                    </button>
+                </div>
+                <div class="flex gap-2 text-xs">
+                    <button onclick="filterByStatus('all')" class="btn-terminal px-3 py-1 text-[10px] active">TODOS</button>
+                    <button onclick="filterByStatus('ultra')" class="btn-terminal btn-danger px-3 py-1 text-[10px]">ULTRA</button>
+                    <button onclick="filterByStatus('restricted')" class="btn-terminal px-3 py-1 text-[10px]" style="border-color: #ff6600; color: #ff6600;">RESTRITO</button>
+                </div>
+            </div>
+
+            <!-- Tabela de Relatórios -->
+            <div class="border-2 border-green-900 bg-black/90 overflow-hidden">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b-2 border-green-800 bg-green-950/30 text-xs uppercase tracking-wider">
+                                <th class="p-4 font-bold text-green-400 w-24">ID</th>
+                                <th class="p-4 font-bold text-green-400 w-32">DATA</th>
+                                <th class="p-4 font-bold text-green-400">TÍTULO / ASSUNTO</th>
+                                <th class="p-4 font-bold text-green-400 w-24 hidden md:table-cell">AGENTE</th>
+                                <th class="p-4 font-bold text-green-400 w-20 text-center">DURAÇÃO</th>
+                                <th class="p-4 font-bold text-green-400 w-48">REPRODUZIR</th>
+                                <th class="p-4 font-bold text-green-400 w-24 text-center">STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reports-table-body">
+                            <!-- Os relatórios serão inseridos aqui via JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Mensagem quando não há resultados -->
+                <div id="no-results" class="hidden p-8 text-center text-green-800 border-t border-green-900">
+                    <i data-lucide="file-x" class="w-8 h-8 mx-auto mb-2"></i>
+                    <p class="text-sm">NENHUM RELATÓRIO ENCONTRADO NO ARQUIVO</p>
+                </div>
+            </div>
+
+            <!-- Instruções para Adicionar Áudios -->
+            <div class="mt-8 border border-green-900/50 p-4 bg-green-950/10">
+                <div class="flex items-start gap-3">
+                    <i data-lucide="info" class="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5"></i>
+                    <div class="text-xs text-green-700 space-y-1">
+                        <p class="font-bold text-green-500">INSTRUÇÕES TÉCNICAS:</p>
+                        <p>• Para adicionar novos relatórios, edite a seção "// CONFIGURAÇÃO DE ÁUDIOS" no código fonte desta página.</p>
+                        <p>• Formatos suportados: MP3, WAV, OGG. Taxa de amostragem recomendada: 44.1kHz.</p>
+                        <p>• Armazene os arquivos na pasta <span class="text-green-500">/audio/</span> ou ajuste o caminho conforme necessário.</p>
+                        <p>• Tamanho máximo recomendado: 50MB por arquivo.</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Rodapé -->
+    <footer class="border-t border-green-900 p-4 bg-black/90 text-center relative z-10 mt-auto">
+        <div class="max-w-4xl mx-auto">
+            <p class="text-[10px] text-green-800 uppercase tracking-widest">
+                © 1984-2024 INSTITUTO EDVERNIA - ARQUIVO NÍVEL 5 | ACESSO MONITORADO
+            </p>
+            <div class="flex justify-center gap-4 mt-2 text-green-900">
+                <i data-lucide="database" class="w-4 h-4"></i>
+                <i data-lucide="hard-drive" class="w-4 h-4"></i>
+                <i data-lucide="server" class="w-4 h-4"></i>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Barra Classificada Inferior -->
+    <div class="classified-bar h-4 w-full"></div>
+
+    <script>
+        // Inicializar ícones
+        lucide.createIcons();
+
+        // ==========================================
+        // CONFIGURAÇÃO DE ÁUDIOS - ADICIONE SEUS RELATÓRIOS AQUI
+        // ==========================================
+        // Para adicionar novos áudios:
+        // 1. Coloque o arquivo MP3/WAV na pasta do projeto (ex: ./audio/seu-arquivo.mp3)
+        // 2. Copie o template abaixo e preencha com seus dados:
+        /*
+        {
+            id: 'AUD-XXX',           // Código único do relatório
+            date: 'DD/MM/AAAA',      // Data do relatório
+            title: 'Título aqui',    // Título/Assunto
+            agent: 'Nome Agente',    // Nome do agente responsável
+            duration: 'MM:SS',       // Duração estimada (formato manual)
+            src: './audio/nome-do-arquivo.mp3',  // Caminho do arquivo
+            status: 'ultra'          // ultra | restricted | internal
+        },
+        */
+        
+        const audioReports = [
+            {
+                id: 'AUD-001',
+                date: '15/01/2024',
+                title: 'Incidente Corredor 7 - Setor de Contenção',
+                agent: 'BASTOS, E.',
+                duration: '03:45',
+                src: './audio/relatorio_001_incidente_7.mp3',
+                status: 'ultra'
+            },
+            {
+                id: 'AUD-002',
+                date: '22/01/2024',
+                title: 'Análise de Amostra V-774 - Projeto Vermelion',
+                agent: 'SILVA, M.',
+                duration: '08:12',
+                src: './audio/relatorio_002_amostra_v774.mp3',
+                status: 'restricted'
+            },
+            {
+                id: 'AUD-003',
+                date: '03/02/2024',
+                title: 'Interrogatório Sujeito 44-B - Codinome: "O Silencioso"',
+                agent: 'BASTOS, E.',
+                duration: '24:33',
+                src: './audio/relatorio_003_interrogatorio_44b.mp3',
+                status: 'ultra'
+            },
+            {
+                id: 'AUD-004',
+                date: '10/02/2024',
+                title: 'Manutenção Preventiva - Câmaras de Isolamento',
+                agent: 'TECNICO-01',
+                duration: '05:20',
+                src: './audio/relatorio_004_manutencao.mp3',
+                status: 'internal'
+            },
+            {
+                id: 'AUD-005',
+                date: '18/02/2024',
+                title: 'Protocolo de Emergência Ativado - Nível Vermelho',
+                agent: 'BASTOS, E.',
+                duration: '12:47',
+                src: './audio/relatorio_005_emergencia.mp3',
+                status: 'ultra'
+            }
+            // ADICIONE NOVOS RELATÓRIOS ACIMA DESTA LINHA
+        ];
+
+        // ==========================================
+        // SISTEMA DE CONTROLE DE ÁUDIO
+        // ==========================================
+        
+        let currentAudio = null;
+        let currentRow = null;
+        let currentlyPlayingId = null;
+
+        // Renderizar tabela
+        function renderTable(reports = audioReports) {
+            const tbody = document.getElementById('reports-table-body');
+            const noResults = document.getElementById('no-results');
+            const totalRecords = document.getElementById('total-records');
+            
+            tbody.innerHTML = '';
+            
+            if (reports.length === 0) {
+                noResults.classList.remove('hidden');
+                totalRecords.textContent = '00';
+                return;
+            }
+            
+            noResults.classList.add('hidden');
+            totalRecords.textContent = reports.length.toString().padStart(2, '0');
+            
+            reports.forEach((report, index) => {
+                const row = document.createElement('tr');
+                row.className = 'audio-row text-sm';
+                row.id = `row-${report.id}`;
+                row.innerHTML = `
+                    <td class="p-4 font-mono text-xs text-green-600">${report.id}</td>
+                    <td class="p-4 text-xs">${report.date}</td>
+                    <td class="p-4">
+                        <div class="font-bold text-green-400 mb-1">${report.title}</div>
+                        <div class="text-[10px] text-green-800 md:hidden">Agente: ${report.agent}</div>
+                    </td>
+                    <td class="p-4 text-xs hidden md:table-cell text-green-700">${report.agent}</td>
+                    <td class="p-4 text-center text-xs font-mono">${report.duration}</td>
+                    <td class="p-4">
+                        <div class="flex items-center gap-3">
+                            <button onclick="togglePlay('${report.id}', '${report.src}')" 
+                                    class="btn-terminal w-10 h-8 flex items-center justify-center" 
+                                    id="btn-${report.id}">
+                                <i data-lucide="play" class="w-4 h-4" id="icon-${report.id}"></i>
+                            </button>
+                            
+                            <div class="flex-1 flex flex-col gap-1">
+                                <input type="range" 
+                                       class="progress-bar" 
+                                       id="progress-${report.id}" 
+                                       value="0" 
+                                       min="0" 
+                                       max="100" 
+                                       oninput="seekAudio('${report.id}', this.value)"
+                                       onclick="event.stopPropagation()">
+                                <div class="flex justify-between text-[10px] text-green-800 font-mono">
+                                    <span id="current-${report.id}">00:00</span>
+                                    <span>${report.duration}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="visualizer hidden" id="viz-${report.id}">
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                                <div class="visualizer-bar"></div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="p-4 text-center">
+                        <span class="status-badge status-${report.status}">
+                            ${report.status === 'ultra' ? 'ULTRA-SECRETO' : 
+                              report.status === 'restricted' ? 'RESTRITO' : 'INTERNO'}
+                        </span>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+            
+            lucide.createIcons();
+        }
+
+        // Controle de reprodução
+        function togglePlay(id, src) {
+            const btn = document.getElementById(`btn-${id}`);
+            const icon = document.getElementById(`icon-${id}`);
+            const row = document.getElementById(`row-${id}`);
+            const viz = document.getElementById(`viz-${id}`);
+            
+            // Se está tocando outro, pare
+            if (currentlyPlayingId && currentlyPlayingId !== id) {
+                stopCurrentAudio();
+            }
+            
+            // Se este está tocando, pare
+            if (currentlyPlayingId === id) {
+                stopCurrentAudio();
+                return;
+            }
+            
+            // Iniciar reprodução
+            if (!currentAudio || currentAudio.src !== src) {
+                currentAudio = new Audio(src);
+                currentAudio.addEventListener('timeupdate', () => updateProgress(id));
+                currentAudio.addEventListener('ended', () => stopCurrentAudio());
+                currentAudio.addEventListener('error', () => {
+                    alert('ERRO: Arquivo de áudio não encontrado ou corrompido.\nVerifique o caminho: ' + src);
+                    stopCurrentAudio();
+                });
+            }
+            
+            currentAudio.play().then(() => {
+                currentlyPlayingId = id;
+                currentRow = row;
+                
+                // Atualizar UI
+                row.classList.add('playing');
+                icon.setAttribute('data-lucide', 'square');
+                viz.classList.remove('hidden');
+                lucide.createIcons();
+                
+                // Atualizar status
+                document.getElementById('system-status').textContent = `REPRODUZINDO: ${id} - ${audioReports.find(r => r.id === id).title}`;
+                document.getElementById('system-status').style.color = '#00ff41';
+            }).catch(e => {
+                console.error('Erro ao reproduzir:', e);
+                alert('ERRO DE REPRODUÇÃO: Verifique se o arquivo existe em:\n' + src);
+            });
+        }
+
+        function stopCurrentAudio() {
+            if (currentAudio) {
+                currentAudio.pause();
+                currentAudio.currentTime = 0;
+            }
+            
+            if (currentlyPlayingId) {
+                const row = document.getElementById(`row-${currentlyPlayingId}`);
+                const icon = document.getElementById(`icon-${currentlyPlayingId}`);
+                const viz = document.getElementById(`viz-${currentlyPlayingId}`);
+                const progress = document.getElementById(`progress-${currentlyPlayingId}`);
+                const current = document.getElementById(`current-${currentlyPlayingId}`);
+                
+                if (row) row.classList.remove('playing');
+                if (icon) {
+                    icon.setAttribute('data-lucide', 'play');
+                    lucide.createIcons();
+                }
+                if (viz) viz.classList.add('hidden');
+                if (progress) progress.value = 0;
+                if (current) current.textContent = '00:00';
+            }
+            
+            currentlyPlayingId = null;
+            currentAudio = null;
+            document.getElementById('system-status').textContent = 'Sistema de arquivo ativo. Aguardando instruções...';
+            document.getElementById('system-status').style.color = '';
+        }
+
+        function updateProgress(id) {
+            if (!currentAudio || currentlyPlayingId !== id) return;
+            
+            const progress = document.getElementById(`progress-${id}`);
+            const current = document.getElementById(`current-${id}`);
+            
+            const percent = (currentAudio.currentTime / currentAudio.duration) * 100;
+            progress.value = percent || 0;
+            
+            // Formatar tempo atual
+            const mins = Math.floor(currentAudio.currentTime / 60);
+            const secs = Math.floor(currentAudio.currentTime % 60);
+            current.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        }
+
+        function seekAudio(id, value) {
+            if (currentAudio && currentlyPlayingId === id) {
+                const time = (value / 100) * currentAudio.duration;
+                currentAudio.currentTime = time;
+            }
+        }
+
+        // Filtros
+        function filterReports() {
+            const search = document.getElementById('search-input').value.toLowerCase();
+            const filtered = audioReports.filter(r => 
+                r.title.toLowerCase().includes(search) ||
+                r.id.toLowerCase().includes(search) ||
+                r.agent.toLowerCase().includes(search)
+            );
+            renderTable(filtered);
+        }
+
+        function filterByStatus(status) {
+            if (status === 'all') {
+                renderTable(audioReports);
+            } else {
+                const filtered = audioReports.filter(r => r.status === status);
+                renderTable(filtered);
+            }
+            
+            // Atualizar botões ativos
+            document.querySelectorAll('.btn-terminal').forEach(btn => {
+                if (btn.textContent.toLowerCase().includes(status === 'all' ? 'todos' : 
+                    status === 'ultra' ? 'ultra' : 'restrito')) {
+                    btn.style.background = status === 'all' ? '#00ff41' : 
+                                          status === 'ultra' ? '#cc0000' : '#ff6600';
+                    btn.style.color = '#000';
+                } else {
+                    btn.style.background = 'transparent';
+                    btn.style.color = '';
+                }
+            });
+        }
+
+        // Logout
+        function logout() {
+            if (confirm('ENCERRAR SESSÃO DO ARQUIVO?')) {
+                // Efeito de saída
+                document.body.style.animation = 'glitch 0.5s';
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 500);
+            }
+        }
+
+        // Efeito de digitação no status
+        const statusMessages = [
+            'Sistema de arquivo ativo. Aguardando instruções...',
+            'Conexão segura estabelecida...',
+            'Banco de dados criptografado...',
+            'Monitoramento de acesso ativo...'
+        ];
+        
+        let msgIndex = 0;
+        setInterval(() => {
+            if (!currentlyPlayingId) {
+                const element = document.getElementById('system-status');
+                element.textContent = statusMessages[msgIndex];
+                msgIndex = (msgIndex + 1) % statusMessages.length;
+            }
+        }, 4000);
+
+        // Inicializar
+        renderTable();
+
+        // Prevenir clique direito
+        document.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+        });
+
+        // Console logs de "monitoramento"
+        setInterval(() => {
+            if (Math.random() > 0.8) {
+                const logs = [
+                    'Verificando integridade dos arquivos...',
+                    'Backup incremental em andamento...',
+                    'Scanning por anomalias...',
+                    'Sincronização com servidor principal...'
+                ];
+                console.log('[ARQUIVO_EDVERNIA] ' + logs[Math.floor(Math.random() * logs.length)]);
+            }
+        }, 8000);
+    </script>
+</body>
+</html>
